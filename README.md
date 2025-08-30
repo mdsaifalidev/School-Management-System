@@ -6,7 +6,7 @@ A full-stack web application built with Next.js, React Hook Form, Drizzle ORM, a
 
 - **Add School**: Form with validation to register new schools
 - **View Schools**: E-commerce style grid layout to browse all schools
-- Cloudinary Integration: Professional image hosting with automatic optimization
+- **Cloudinary Integration**: Professional image hosting with automatic optimization
 - **Responsive Design**: Works seamlessly on both desktop and mobile devices
 - **Form Validation**: Comprehensive client and server-side validation
 - **Modern UI**: Clean, professional interface with Tailwind CSS

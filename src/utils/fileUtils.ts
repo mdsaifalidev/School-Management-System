@@ -1,34 +1,74 @@
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import cloudinary, { CloudinaryUploadResult } from "@/utils/cloudinary"
 
-export async function saveFile(file: File): Promise<string> {
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+export async function uploadToCloudinary(file: File): Promise<string> {
+  try {
+    // Convert file to base64
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const base64String = `data:${file.type};base64,${buffer.toString("base64")}`
 
-  // Create schoolImages directory if it doesn't exist
-  const uploadDir = join(process.cwd(), 'public', 'schoolImages');
-  if (!existsSync(uploadDir)) {
-    await mkdir(uploadDir, { recursive: true });
+    // Upload to Cloudinary
+    const result = await new Promise<CloudinaryUploadResult>(
+      (resolve, reject) => {
+        cloudinary.uploader.upload(
+          base64String,
+          {
+            folder: "school-management/schools", // Organize uploads in folders
+            resource_type: "auto",
+            transformation: [
+              { width: 800, height: 600, crop: "limit" }, // Resize large images
+              { quality: "auto" }, // Optimize quality automatically
+              { fetch_format: "auto" }, // Use best format for browser
+            ],
+          },
+          (error, result) => {
+            if (error) {
+              reject(error)
+            } else if (result) {
+              resolve(result as CloudinaryUploadResult)
+            } else {
+              reject(new Error("Upload failed"))
+            }
+          }
+        )
+      }
+    )
+
+    return result.secure_url
+  } catch (error) {
+    console.error("Cloudinary upload error:", error)
+    throw new Error("Failed to upload image to Cloudinary")
   }
+}
 
-  // Generate unique filename
-  const timestamp = Date.now();
-  const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-  const path = join(uploadDir, fileName);
+export async function deleteFromCloudinary(publicId: string): Promise<void> {
+  try {
+    await cloudinary.uploader.destroy(publicId)
+  } catch (error) {
+    console.error("Cloudinary delete error:", error)
+    throw new Error("Failed to delete image from Cloudinary")
+  }
+}
 
-  // Write file
-  await writeFile(path, buffer);
-
-  // Return relative path for database storage
-  return `/schoolImages/${fileName}`;
+export function extractPublicIdFromUrl(url: string): string | null {
+  try {
+    // Extract public_id from Cloudinary URL
+    const matches = url.match(/\/v\d+\/(.+)\./)
+    return matches ? matches[1] : null
+  } catch {
+    return null
+  }
 }
 
 export function validateFileType(file: File): boolean {
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  return allowedTypes.includes(file.type);
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+  return allowedTypes.includes(file.type)
 }
 
-export function validateFileSize(file: File, maxSize: number = 5 * 1024 * 1024): boolean {
-  return file.size <= maxSize;
+export function validateFileSize(
+  file: File,
+  maxSize: number = 10 * 1024 * 1024
+): boolean {
+  // Increased to 10MB since Cloudinary will optimize
+  return file.size <= maxSize
 }

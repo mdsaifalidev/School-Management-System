@@ -272,11 +272,11 @@ export default function AddSchool() {
               )}
               {errors.image && (
                 <p className="mt-1 text-sm text-red-600">
-                  {errors.image?.message?.toString()}
+                  {errors?.image?.message?.toString()}
                 </p>
               )}
               <p className="mt-1 text-xs text-gray-500">
-                Supported formats: JPEG, JPG, PNG, WebP. Max size: 5MB
+                Supported formats: JPEG, JPG, PNG, WebP. Max size: 10MB
               </p>
             </div>
 

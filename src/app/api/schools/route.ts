@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/db/index"
 import { schools } from "@/db/schema"
-import { saveFile, validateFileType, validateFileSize } from "@/utils/fileUtils"
-import { schoolSchema } from "@/validations/school"
+import {
+  uploadToCloudinary,
+  validateFileType,
+  validateFileSize,
+} from "@/utils/fileUtils"
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     if (!validateFileSize(image)) {
       return NextResponse.json(
-        { error: "File size too large. Maximum size is 5MB." },
+        { error: "File size too large. Maximum size is 10MB." },
         { status: 400 }
       )
     }
@@ -68,8 +71,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Save image file
-    const imagePath = await saveFile(image)
+    // Upload image to Cloudinary
+    let imageUrl: string
+    try {
+      imageUrl = await uploadToCloudinary(image)
+    } catch (error) {
+      console.error("Cloudinary upload error:", error)
+      return NextResponse.json(
+        { error: "Failed to upload image. Please try again." },
+        { status: 500 }
+      )
+    }
 
     // Insert into database
     const [result] = await db.insert(schools).values({
@@ -79,13 +91,14 @@ export async function POST(request: NextRequest) {
       state,
       contact,
       email_id,
-      image: imagePath,
+      image: imageUrl,
     })
 
     return NextResponse.json(
       {
         message: "School added successfully!",
         id: result.insertId,
+        imageUrl,
       },
       { status: 201 }
     )

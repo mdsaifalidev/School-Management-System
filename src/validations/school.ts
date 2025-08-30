@@ -27,8 +27,8 @@ export const schoolSchema = z.object({
   image: z.any()
     .refine((files) => files?.length === 1, 'Image is required')
     .refine(
-      (files) => files?.[0]?.size <= 5000000,
-      'Max file size is 5MB'
+      (files) => files?.[0]?.size <= 10000000,
+      'Max file size is 10MB'
     )
     .refine(
       (files) => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(files?.[0]?.type),
